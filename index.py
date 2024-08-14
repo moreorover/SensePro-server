@@ -1,10 +1,11 @@
 from utils.network import get_default_gateway, get_local_ip, get_mac_address
-from utils.front_end_api import fetchSessionId, fetchController, updateController
+from utils.front_end_api import fetch_session_id, fetch_controller, update_controller
 from dotenv import load_dotenv
 import os
 import schedule
 import time
 import urllib.parse
+import logging
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -13,6 +14,16 @@ load_dotenv()
 api_host = os.getenv('API_HOST')
 email = os.getenv('EMAIL')
 password = os.getenv('PASSWORD')
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("app.log"),  # Log to a file named 'app.log'
+        logging.StreamHandler()          # Also log to the console
+    ]
+)
 
 def run_continuously():
     """Run the schedule in an infinite loop with a small delay between each iteration."""
@@ -35,10 +46,10 @@ if __name__ == "__main__":
 
     # print(f"API Host: {api_host}")
 
-    session = fetchSessionId(api_host, email, password)
+    session = fetch_session_id(api_host, email, password)
 
-    controller = fetchController(api_host, session, mac_address)
+    controller = fetch_controller(api_host, session, mac_address)
 
     controller['ip'] = local_ip
 
-    updateController(api_host, session, controller)
+    update_controller(api_host, session, controller)
