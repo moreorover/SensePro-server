@@ -1,0 +1,4 @@
+netifaces
+python-dotenv
+requests
+schedule
