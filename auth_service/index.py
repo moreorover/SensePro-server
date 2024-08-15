@@ -29,16 +29,15 @@ logging.basicConfig(
 
 logging.info("Authentication service is starting...")
 
-keydb_url = os.getenv('KEYDB_URL')
-r = connect_to_keydb(keydb_url)
-
 # Load environment variables from the .env file
 load_dotenv()
 
-# Access the environment variables
+keydb_url = os.getenv('KEYDB_URL')
 api_host = os.getenv('API_HOST')
 email = os.getenv('EMAIL')
 password = os.getenv('PASSWORD')
+
+r = connect_to_keydb(keydb_url)
 
 def fetch_session():
     """Fetch a new session ID every hour."""
