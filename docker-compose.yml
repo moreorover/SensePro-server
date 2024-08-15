@@ -8,11 +8,11 @@ services:
     volumes:
       - ./keydb-data:/data  # Persist KeyDB data to a local directory in the project root
 
-  auth_service:
+  sense_pro_server:
     build:
       context: .  # Set context to the project root
-      dockerfile: ./auth_service/Dockerfile
-    container_name: auth_service
+      dockerfile: ./Dockerfile
+    container_name: sense_pro_server
     volumes:
       - ./logs:/app/logs  # Bind the logs directory to the host system
     env_file:
