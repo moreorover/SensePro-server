@@ -30,16 +30,12 @@ api_host = os.getenv('API_HOST')
 email = os.getenv('EMAIL')
 password = os.getenv('PASSWORD')
 
-logging.info(f"api_host -> {api_host}")
-logging.info(f"email -> {email}")
-logging.info(f"password -> {password}")
-
-def update_session_id():
+def fetch_session():
     """Fetch a new session ID every hour."""
-    global session
     session = fetch_session_id(api_host, email, password)
     if session:
-        logging.info("Session ID updated successfully.")
+        r.set("session", session)
+        logging.info(f"Successfully wrote key session with to KeyDB.")
     else:
         logging.error("Failed to update Session ID.")
 
@@ -51,11 +47,10 @@ def run_scheduler():
 
 if __name__ == "__main__":
     # Schedule tasks
-    schedule.every(5).seconds.do(update_session_id)  # Update session ID every hour
-    # schedule.every(2).seconds.do(fetch_controller_id)  # Fetch controller ID every minute
+    schedule.every(5).seconds.do(fetch_session)  # Update session ID every hour
 
     # Get the initial session ID
-    update_session_id()
+    fetch_session()
 
     # Start the scheduler loop
     run_scheduler()
