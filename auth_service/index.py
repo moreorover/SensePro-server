@@ -7,13 +7,23 @@ import time
 from utils.common import connect_to_keydb
 from utils.front_end_api import fetch_session_id
 
+from logging.handlers import TimedRotatingFileHandler
+
+# Set up a timed rotating log handler
+timed_handler = TimedRotatingFileHandler(
+    "/app/logs/auth_service.log",  # Log file path
+    when="midnight",  # Rotate at midnight
+    interval=1,  # Rotate every day
+    backupCount=7  # Keep up to 7 days of logs
+)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("/app/logs/auth_service.log"),  # Log to a file named 'service1.log'
-        logging.StreamHandler()          # Also log to the console
+        timed_handler,  # Timed rotating file handler
+        logging.StreamHandler()  # Also log to the console
     ]
 )
 
