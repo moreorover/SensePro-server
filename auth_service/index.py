@@ -29,7 +29,7 @@ logging.basicConfig(
 
 logging.info("Authentication service is starting...")
 
-keydb_url = os.getenv('KEYDB_URL', 'redis://keydb:6379/0')
+keydb_url = os.getenv('KEYDB_URL')
 r = connect_to_keydb(keydb_url)
 
 # Load environment variables from the .env file
