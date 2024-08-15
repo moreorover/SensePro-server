@@ -1,20 +1,26 @@
-from utils.network import get_mac_address
-from utils.front_end_api import fetch_session_id, fetch_controller
-from dotenv import load_dotenv
+import logging
 import os
 import schedule
+from dotenv import load_dotenv
 import time
-import logging
+
+from utils.common import connect_to_keydb
+from utils.front_end_api import fetch_session_id
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("app.log"),  # Log to a file named 'app.log'
+        logging.FileHandler("/app/logs/auth_service.log"),  # Log to a file named 'service1.log'
         logging.StreamHandler()          # Also log to the console
     ]
 )
+
+logging.info("Authentication service is starting...")
+
+keydb_url = os.getenv('KEYDB_URL', 'redis://keydb:6379/0')
+r = connect_to_keydb(keydb_url)
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -24,9 +30,9 @@ api_host = os.getenv('API_HOST')
 email = os.getenv('EMAIL')
 password = os.getenv('PASSWORD')
 
-session = None
-mac_address = get_mac_address()
-logging.info(f"MAC Address set: {mac_address}")
+logging.info(f"api_host -> {api_host}")
+logging.info(f"email -> {email}")
+logging.info(f"password -> {password}")
 
 def update_session_id():
     """Fetch a new session ID every hour."""
@@ -37,18 +43,6 @@ def update_session_id():
     else:
         logging.error("Failed to update Session ID.")
 
-def fetch_controller_id():
-    """Fetch the controller ID every minute."""
-    if session is not None and mac_address is not None:
-        controller = fetch_controller(api_host, session, mac_address)
-        if controller:
-            cid = controller.get('id')
-            logging.info(f'Fetched Controller ID: {cid}')
-        else:
-            logging.error("Failed to fetch Controller ID.")
-    else:
-        logging.warning("Session or MAC address not set. Skipping controller fetch.")
-
 def run_scheduler():
     """Run the scheduled tasks in an infinite loop."""
     while True:
@@ -58,7 +52,7 @@ def run_scheduler():
 if __name__ == "__main__":
     # Schedule tasks
     schedule.every(5).seconds.do(update_session_id)  # Update session ID every hour
-    schedule.every(2).seconds.do(fetch_controller_id)  # Fetch controller ID every minute
+    # schedule.every(2).seconds.do(fetch_controller_id)  # Fetch controller ID every minute
 
     # Get the initial session ID
     update_session_id()
