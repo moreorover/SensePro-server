@@ -46,10 +46,10 @@ def fetch_session():
     session = fetch_session_id(api_host, email, password)
     if session:
         r.set("session", session)
-        logging.info("Successfully wrote key session with to KeyDB.")
+        logging.info("Successfully wrote key session to KeyDB.")
     else:
         logging.error("Failed to update Session ID.")
-        raise Exception("Failed to fetch session ID.")
+
 
 def run_scheduler():
     """Run the scheduled tasks in an infinite loop."""

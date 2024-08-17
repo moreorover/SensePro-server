@@ -47,23 +47,39 @@ def fetch_controller(host: str, session: str, mac: str) -> Optional[Dict[str, An
     url = f'{host}/api/controller/{mac}'
     cookies = {'session': session}
 
-    response = send_request("GET", url, cookies=cookies)
-
-    if response:
+    logging.info(f"Fetching controller information from {url}")
+    
+    try:
+        response = requests.get(url, cookies=cookies)
+        logging.info(f"Response code: {response.status_code}")
+        
+        if response.status_code != 200:
+            raise Exception(f"Failed to fetch controller. Status code: {response.status_code}")
+        
         return response.json()
-    return None
+    except requests.RequestException as e:
+        logging.error(f"Request failed: {e}")
+        raise Exception(f"Request to {url} failed") from e
 
 def update_controller(host: str, session: str, controller: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     controller_id = controller.get('id')
     if not controller_id:
         logging.error("Controller ID is missing.")
-        return None
+        raise ValueError("Controller ID is required for updating.")
 
     url = f'{host}/api/devices/{controller_id}'
     cookies = {'session': session}
 
-    response = send_request("PATCH", url, json=controller, cookies=cookies)
-
-    if response:
+    logging.info(f"Updating controller {controller_id} at {url}")
+    
+    try:
+        response = requests.patch(url, json=controller, cookies=cookies)
+        logging.info(f"Response code: {response.status_code}")
+        
+        if response.status_code != 200:
+            raise Exception(f"Failed to update controller. Status code: {response.status_code}")
+        
         return response.json()
-    return None
+    except requests.RequestException as e:
+        logging.error(f"Request failed: {e}")
+        raise Exception(f"Request to {url} failed") from e
