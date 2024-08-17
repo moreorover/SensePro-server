@@ -4,6 +4,7 @@ import schedule
 from dotenv import load_dotenv
 import time
 
+from utils.retry import retry
 from utils.common import connect_to_keydb
 from utils.front_end_api import fetch_session_id
 
@@ -39,14 +40,16 @@ password = os.getenv('PASSWORD')
 
 r = connect_to_keydb(keydb_url)
 
+@retry(retries=3, delay=15)
 def fetch_session():
-    """Fetch a new session ID every hour."""
+    """Fetch a new session ID with retries on failure."""
     session = fetch_session_id(api_host, email, password)
     if session:
         r.set("session", session)
-        logging.info(f"Successfully wrote key session with to KeyDB.")
+        logging.info("Successfully wrote key session with to KeyDB.")
     else:
         logging.error("Failed to update Session ID.")
+        raise Exception("Failed to fetch session ID.")
 
 def run_scheduler():
     """Run the scheduled tasks in an infinite loop."""
@@ -56,7 +59,7 @@ def run_scheduler():
 
 if __name__ == "__main__":
     # Schedule tasks
-    schedule.every(5).seconds.do(fetch_session)  # Update session ID every hour
+    schedule.every(5).seconds.do(fetch_session)  # Schedule session update
 
     # Get the initial session ID
     fetch_session()

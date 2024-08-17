@@ -25,18 +25,23 @@ def fetch_session_id(host: str, email: str, password: str) -> Optional[str]:
     url = f'{host}/api/auth/signin'
     payload = {'email': email, 'password': password}
     logging.info(f"Sending POST request to {url}")
-    response = send_request("POST", url, json=payload)
-
-    logging.info(f"Response code: {response.status_code}")
-
-    if response:
+    
+    try:
+        response = requests.post(url, json=payload)
+        logging.info(f"Response code: {response.status_code}")
+        
+        if response.status_code != 200:
+            raise Exception(f"Failed to authenticate. Status code: {response.status_code}")
+        
         session_cookie = response.cookies.get('session')
         if session_cookie:
             logging.info(f"Session ID found!")
             return session_cookie
         else:
-            logging.error("Session cookie not found in response.")
-    return None
+            raise Exception("Session cookie not found in response.")
+    except requests.RequestException as e:
+        logging.error(f"Request failed: {e}")
+        raise Exception(f"Request to {url} failed") from e
 
 def fetch_controller(host: str, session: str, mac: str) -> Optional[Dict[str, Any]]:
     url = f'{host}/api/controller/{mac}'
