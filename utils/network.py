@@ -36,6 +36,10 @@ def get_mac_address():
     mac_address = ':'.join(f'{(mac >> 8*i) & 0xff:02x}' for i in reversed(range(6)))
     return mac_address
 
+def get_mac_address_eth0(interface='eth0'):
+    # Get the MAC address of the specified interface
+    mac_address = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]['addr']
+    return mac_address
 
 if __name__ == "__main__":
     gateway_ip = get_default_gateway()
@@ -46,3 +50,6 @@ if __name__ == "__main__":
     
     mac_address = get_mac_address()
     print(f"MAC Address: {mac_address}")
+
+    mac_address_eth0 = get_mac_address()
+    print(f"MAC Address eth0: {mac_address_eth0}")

@@ -4,8 +4,9 @@ FROM arm32v7/python:3.8-slim
 # Set the working directory inside the container
 WORKDIR /app
 
-# Install Supervisor
-RUN apt-get update && apt-get install -y supervisor
+# Install Supervisor and the build tools required for netifaces
+RUN apt-get update && \
+  apt-get install -y supervisor build-essential python3-dev
 
 # Copy the requirements file and install dependencies
 COPY requirements.txt /app/
@@ -16,6 +17,7 @@ COPY ./utils /app/utils
 
 # Copy your Python scripts
 COPY auth_service.py /app/
+COPY controller_service.py /app/
 
 # Copy Supervisor configuration file
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
