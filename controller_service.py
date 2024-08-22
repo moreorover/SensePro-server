@@ -5,9 +5,7 @@ from dotenv import load_dotenv
 import time
 import json
 
-from utils.network import get_mac_address_eth0
-from utils.retry import retry
-from utils.common import connect_to_keydb
+from utils.redis_client import RedisClient
 from utils.front_end_api import fetch_controller
 
 from logging.handlers import TimedRotatingFileHandler
@@ -35,13 +33,15 @@ logging.info("Controller service is starting...")
 # Load environment variables from the .env file
 load_dotenv()
 
-keydb_url = os.getenv('KEYDB_URL')
+keydb_host = os.getenv('KEYDB_HOST')
+keydb_port = os.getenv('KEYDB_PORT')
+keydb_database = os.getenv('KEYDB_DATABASE')
 api_host = os.getenv('API_HOST')
 mac = os.getenv('MAC')
 
-r = connect_to_keydb(keydb_url)
+r: RedisClient = RedisClient(host=keydb_host, port=keydb_port, db=keydb_database)
 
-session = r.get("session")
+session = r.get_object("session")
 
 logging.info(f"MAC Address: {mac}")
 
@@ -55,7 +55,7 @@ def job():
         logging.error("Session is None!")
         raise Exception("Session is None!")
     
-    controller = fetch_controller(api_host, session.decode('utf-8'), mac)
+    controller = fetch_controller(api_host, session, mac)
     # logging.info(controller)
     if controller:
         cctv = controller.get("cctv")
@@ -63,7 +63,7 @@ def job():
         if cctv:
             # Serialize the list of dictionaries to a JSON string
             my_data_json = json.dumps(cctv)
-            r.set("cctv", my_data_json)
+            r.save_object("cctv", my_data_json)
         # logging.info("Successfully wrote key session to KeyDB.")
     else:
         logging.error("Failed to fetch controller.")
