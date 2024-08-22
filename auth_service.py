@@ -8,24 +8,10 @@ from utils.redis_client import RedisClient
 from utils.retry import retry
 from utils.front_end_api import fetch_session_id
 
-from logging.handlers import TimedRotatingFileHandler
-
-# Set up a timed rotating log handler
-timed_handler = TimedRotatingFileHandler(
-    "/app/logs/auth_service.log",  # Log file path
-    when="midnight",  # Rotate at midnight
-    interval=1,  # Rotate every day
-    backupCount=7  # Keep up to 7 days of logs
-)
-
-# Configure logging
+# Set up basic logging configuration
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        timed_handler,  # Timed rotating file handler
-        logging.StreamHandler()  # Also log to the console
-    ]
 )
 
 logging.info("Authentication service is starting...")
@@ -51,7 +37,6 @@ def fetch_session():
         logging.info("Successfully wrote key session to KeyDB.")
     else:
         logging.error("Failed to update Session ID.")
-
 
 def run_scheduler():
     """Run the scheduled tasks in an infinite loop."""
