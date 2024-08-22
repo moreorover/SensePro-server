@@ -6,7 +6,6 @@ import time
 
 from utils.redis_client import RedisClient
 from utils.retry import retry
-from utils.common import connect_to_keydb
 from utils.front_end_api import fetch_session_id
 
 from logging.handlers import TimedRotatingFileHandler
