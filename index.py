@@ -1,3 +1,4 @@
+from utils.dahua_client import DahuaClient
 from utils.network import get_mac_address
 from utils.front_end_api import fetch_session_id, fetch_controller
 from dotenv import load_dotenv
@@ -48,6 +49,17 @@ def fetch_controller_id():
             logging.error("Failed to fetch Controller ID.")
     else:
         logging.warning("Session or MAC address not set. Skipping controller fetch.")
+
+def fetch_dahua_id():
+    # Example usage:
+    camera = DahuaClient(ip_address='192.168.88.51', username='admin', password='kc158741')
+
+    # Get system info
+    camera.get_system_info()
+
+    # Get serial number
+    x = camera.get_serial_number()
+    logging.info(x)
 
 def run_scheduler():
     """Run the scheduled tasks in an infinite loop."""
