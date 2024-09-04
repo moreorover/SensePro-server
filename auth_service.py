@@ -6,7 +6,7 @@ import time
 
 from utils.redis_client import RedisClient
 from utils.retry import retry
-from utils.front_end_api import fetch_session_id
+from utils.front_end_api import FrontEndAPI
 
 # Set up basic logging configuration
 logging.basicConfig(
@@ -28,10 +28,13 @@ password = os.getenv('PASSWORD')
 
 r: RedisClient = RedisClient(host=keydb_host, port=keydb_port, db=keydb_database)
 
+# Create an instance of FrontEndAPI with the host URL
+api = FrontEndAPI(host=api_host)
+
 @retry(retries=3, delay=15)
 def fetch_session():
     """Fetch a new session ID with retries on failure."""
-    session = fetch_session_id(api_host, email, password)
+    session = api.fetch_session_id(email, password)
     if session:
         r.save_object("session", session)
         logging.info("Successfully wrote key session to KeyDB.")

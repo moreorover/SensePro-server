@@ -3,10 +3,9 @@ import os
 import schedule
 from dotenv import load_dotenv
 import time
-import json
 
 from utils.redis_client import RedisClient
-from utils.front_end_api import fetch_controller
+from utils.front_end_api import FrontEndAPI
 
 # Set up basic logging configuration
 logging.basicConfig(
@@ -27,8 +26,6 @@ mac = os.getenv('MAC')
 
 r: RedisClient = RedisClient(host=keydb_host, port=keydb_port, db=keydb_database)
 
-session = r.get_object("session")
-
 logging.info(f"MAC Address: {mac}")
 
 # @retry(retries=3, delay=15)
@@ -37,20 +34,24 @@ def job():
 
     logging.info("job starting")
 
+    session = r.get_object("session")
+
     if session is None:
         logging.error("Session is None!")
         raise Exception("Session is None!")
     
-    controller = fetch_controller(api_host, session, mac)
-    # logging.info(controller)
+    # Create an instance of FrontEndAPI with the host URL
+    api = FrontEndAPI(host=api_host, session=session)
+
+    controller = api.fetch_controller(mac)
+
     if controller:
         cctv = controller.get("cctv")
-        logging.info(cctv)
+        # logging.info(cctv)
         if cctv:
-            # Serialize the list of dictionaries to a JSON string
-            my_data_json = json.dumps(cctv)
-            r.save_object("cctv", my_data_json)
-        # logging.info("Successfully wrote key session to KeyDB.")
+            r.save_object("cctv", cctv)
+            for c in cctv:
+                logging.info(c)
     else:
         logging.error("Failed to fetch controller.")
 
