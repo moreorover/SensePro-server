@@ -4,6 +4,7 @@ import schedule
 from dotenv import load_dotenv
 import time
 
+from utils.network import find_ip_for_mac, find_network_devices
 from utils.redis_client import RedisClient
 from utils.front_end_api import FrontEndAPI
 
@@ -45,13 +46,28 @@ def job():
 
     controller = api.fetch_controller(mac)
 
+    network_devices = find_network_devices()
+
     if controller:
-        cctv = controller.get("cctv")
-        # logging.info(cctv)
-        if cctv:
-            r.save_object("cctv", cctv)
-            for c in cctv:
-                logging.info(c)
+        cctv_devices = controller.get("cctv")
+        if cctv_devices:
+            r.save_object("cctv", cctv_devices)
+            for cctv_device in cctv_devices:
+                device_mac = cctv_device.get("mac")
+                device_ip = find_ip_for_mac(network_devices, device_mac)
+
+                if device_ip is None:
+                    logging.error(f"Could not find IP address for mac: {device_mac}")
+                    continue
+                
+                if cctv_device.get("ip") != device_ip:
+                    logging.info("Device IP address is not the same.")
+                    cctv_device['ip'] = device_ip
+                    api.update_device(cctv_device)
+                    r.save_object("cctv", cctv_devices)
+
+                logging.info(f"IP {device_ip} for MAC {device_mac}")
+
     else:
         logging.error("Failed to fetch controller.")
 
@@ -64,7 +80,7 @@ def run_scheduler():
 
 if __name__ == "__main__":
     # Schedule tasks
-    schedule.every(10).seconds.do(job)  # Schedule session update
+    schedule.every(15).seconds.do(job)  # Schedule session update
 
     # Get the initial session ID
     job()

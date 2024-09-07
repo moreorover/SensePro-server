@@ -19,17 +19,5 @@ services:
       - keydb
     restart: always
 
-  sense_pro_server:
-    build:
-      context: .  # Set context to the project root
-      dockerfile: ./Dockerfile
-    container_name: sense_pro_server
-    volumes:
-      - ./logs:/app/logs  # Bind the logs directory to the host system
-    env_file:
-      - .env.docker
-    depends_on:
-      - keydb
-
 volumes:
   keydb-data:

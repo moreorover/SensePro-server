@@ -1,22 +1,39 @@
+
+import logging
+from typing import Dict, List
 import netifaces
+import re
 import socket
 import uuid
 
 from scapy.all import ARP, Ether, srp
 
+logger = logging.getLogger(__name__)
+
+class DefaultGatewayNotFoundException(Exception):
+    pass
+
+def is_valid_ipv4(ip):
+    # Regular expression to validate an IPv4 address
+    pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+    return re.match(pattern, ip) is not None
+
 def get_default_gateway():
+    # Get the default gateway information
     gateways = netifaces.gateways()
-    default_gateway = gateways.get('default')
     
-    if default_gateway:
-        # Get the default gateway for IPv4
-        gateway_ip = default_gateway.get(netifaces.AF_INET)
-        if gateway_ip:
-            return gateway_ip[0]
-        else:
-            return "No IPv4 gateway found"
-    else:
-        return "No default gateway found"
+    # Extract the default gateway for IPv4
+    default_gateway = gateways.get('default', {}).get(netifaces.AF_INET)
+    
+    if not default_gateway:
+        raise DefaultGatewayNotFoundException("Default gateway not found.")
+    
+    gateway_ip = default_gateway[0]  # IP of the default gateway
+    
+    if not is_valid_ipv4(gateway_ip):
+        raise DefaultGatewayNotFoundException(f"Invalid default gateway: {gateway_ip}")
+    
+    return gateway_ip
 
 
 def get_local_ip():
@@ -30,27 +47,31 @@ def get_local_ip():
     except Exception as e:
         return f"An error occurred: {e}"
 
-
 def get_mac_address():
-    # Get the MAC address using uuid.getnode()
-    mac = uuid.getnode()
-    # Format the MAC address in human-readable form
-    mac_address = ':'.join(f'{(mac >> 8*i) & 0xff:02x}' for i in reversed(range(6)))
-    return mac_address
+    # Get all network interfaces
+    interfaces = netifaces.interfaces()
+    
+    for interface in interfaces:
+        # Fetch address info for the interface
+        addresses = netifaces.ifaddresses(interface)
+        
+        # Check if the interface has a MAC address (AF_LINK is for link layer addresses, including MAC)
+        if netifaces.AF_LINK in addresses:
+            mac_address = addresses[netifaces.AF_LINK][0].get('addr')
+            
+            if mac_address:
+                return mac_address
+    
+    raise Exception("MAC address not found")
 
-def get_mac_address_eth0(interface='eth0'):
-    # Get the MAC address of the specified interface
-    mac_address = netifaces.ifaddresses(interface)[netifaces.AF_LINK][0]['addr']
-    return mac_address
-
-def get_ip_range(default_gateway):
+def get_ip_range_for_gateway(default_gateway):
     # Assuming a /24 subnet mask for simplicity
     # We replace the last octet with '0/24' to define the range
     ip_parts = default_gateway.split('.')
     ip_parts[-1] = '0/24'
     return '.'.join(ip_parts)
 
-def scan_network(ip_range):
+def scan_network(ip_range) -> List[Dict[str, str]]:
     # Create ARP request packet
     arp = ARP(pdst=ip_range)
     ether = Ether(dst="ff:ff:ff:ff:ff:ff")
@@ -64,30 +85,56 @@ def scan_network(ip_range):
 
     for sent, received in result:
         # Append the IP and MAC address of each device to the list
-        devices.append({'IP': received.psrc, 'MAC': received.hwsrc})
+        devices.append({'ip': received.psrc, 'mac': received.hwsrc})
     
     return devices
 
-if __name__ == "__main__":
+def find_network_devices() -> List[Dict[str, str]]:
+    logging.info(f"Finding network devices...")
     gateway_ip = get_default_gateway()
-    print(f"Default Gateway IP Address: {gateway_ip}")
+    logging.info(f"Default Gateway IP Address: {gateway_ip}")
 
     local_ip = get_local_ip()
-    print(f"Local IP Address: {local_ip}")
+    logging.info(f"Local IP Address: {local_ip}")
     
     mac_address = get_mac_address()
-    print(f"MAC Address: {mac_address}")
+    logging.info(f"MAC Address: {mac_address}")
 
     mac_address_eth0 = get_mac_address()
-    print(f"MAC Address eth0: {mac_address_eth0}")
+    logging.info(f"MAC Address eth0: {mac_address_eth0}")
 
-    ip_range = get_ip_range(gateway_ip)
-    print(ip_range)
+    ip_range = get_ip_range_for_gateway(gateway_ip)
+    logging.info(ip_range)
 
     network_devices = scan_network(ip_range)
 
-    print("Available devices in the network:")
-    print("IP" + " "*18+"MAC")
+    logging.info(f"Found a total of {len(network_devices)} network devices.")
+    return network_devices
+
+def find_ip_for_mac(network_devices: List[Dict[str, str]], mac: str) -> str:
+    for device in network_devices:
+        if device.get("mac") == mac:
+            return device.get("ip")
+    
+    raise Exception(f"There is no such device on the network for MAC: {mac}")
+
+if __name__ == "__main__":
+    gateway_ip = get_default_gateway()
+    logging.info(f"Default Gateway IP Address: {gateway_ip}")
+
+    local_ip = get_local_ip()
+    logging.info(f"Local IP Address: {local_ip}")
+    
+    mac_address = get_mac_address()
+    logging.info(f"MAC Address: {mac_address}")
+
+    ip_range = get_ip_range_for_gateway(gateway_ip)
+    logging.info(ip_range)
+
+    network_devices = scan_network(ip_range)
+
+    logging.info("Available devices in the network:")
+    logging.info("IP" + " "*18+"MAC")
 
     for device in network_devices:
-        print("{:16}    {}".format(device['IP'], device['MAC']))
+        logging.info("{:16}    {}".format(device.get("ip"), device.get("mac")))

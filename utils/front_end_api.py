@@ -58,19 +58,19 @@ class FrontEndAPI:
         response = self._send_request(HTTPMethod.GET, endpoint, cookies=cookies)
         return response.json()
 
-    def update_controller(self, controller: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def update_device(self, device: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Updates controller information based on the provided data."""
         if not self.session:
             logger.error("Session ID is required to update the controller.")
             raise Exception("Session ID is required.")
 
-        controller_id = controller.get('id')
-        if not controller_id:
-            logger.error("Controller ID is missing.")
-            raise ValueError("Controller ID is required for updating.")
+        device_id = device.get('id')
+        if not device_id:
+            logger.error("Device ID is missing.")
+            raise ValueError("Device ID is required for updating.")
 
-        endpoint = f'/api/devices/{controller_id}'
+        endpoint = f'/api/devices/{device_id}'
         cookies = {'session': self.session}
 
-        response = self._send_request(HTTPMethod.PATCH, endpoint, json=controller, cookies=cookies)
+        response = self._send_request(HTTPMethod.PATCH, endpoint, json=device, cookies=cookies)
         return response.json()
