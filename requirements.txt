@@ -3,4 +3,5 @@ redis
 requests
 schedule
 netifaces
+pika
 scapy
