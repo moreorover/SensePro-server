@@ -166,3 +166,5 @@ cython_debug/
 keydb-data
 
 logs
+node_modules
+.idea
